@@ -1,0 +1,17 @@
+- {name: "type: bug", color: "d73a4a", description: "Perilaku salah"}
+- {name: "type: enhancement", color: "a2eeef", description: "Peningkatan fitur"}
+- {name: "type: refactor", color: "cfd3d7", description: "Rapikan kode tanpa ubah perilaku"}
+- {name: "type: docs", color: "0075ca", description: "Dokumentasi"}
+- {name: "area: flashcard", color: "c5def5", description: ""}
+- {name: "area: board", color: "c5def5", description: "Papan tulis"}
+- {name: "area: quiz", color: "c5def5", description: ""}
+- {name: "area: table", color: "c5def5", description: ""}
+- {name: "area: data", color: "c5def5", description: "Data kana & contoh kata"}
+- {name: "area: a11y", color: "c5def5", description: "Aksesibilitas"}
+- {name: "area: storage", color: "c5def5", description: "Penyimpanan & progres"}
+- {name: "area: infra", color: "c5def5", description: "Build, CI, deploy"}
+- {name: "shipped", color: "0e8a16", description: "Sudah dirilis (dicatat untuk riwayat)"}
+- {name: "priority: high", color: "b60205", description: ""}
+- {name: "priority: medium", color: "fbca04", description: ""}
+- {name: "priority: low", color: "c2e0c6", description: ""}
+- {name: "good first issue", color: "7057ff", description: "Cocok untuk kontributor baru"}
