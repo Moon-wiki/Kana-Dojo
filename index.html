@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Kana Dojo — Belajar Hiragana & Katakana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ai:#223A5E; --ai-deep:#152840; --sumi:#1C1B1A;
+    --washi:#F2ECDD; --washi-2:#E8E0CB; --hanko:#C1272D; --kin:#A9781F; --grey:#8B8378;
+    --board-w:min(84vw,320px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{ touch-action:manipulation; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(34,58,94,0.06), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(139,131,120,0.05) 0px, rgba(139,131,120,0.05) 1px, transparent 1px, transparent 3px),
+      var(--washi);
+    color:var(--sumi); font-family:'Zen Kaku Gothic New', sans-serif;
+    min-height:100vh; padding-bottom:50px; overscroll-behavior:none;
+  }
+  header{ text-align:center; padding:28px 16px 6px; }
+  .eyebrow{ font-family:'JetBrains Mono',monospace; letter-spacing:.2em; font-size:11px; color:var(--ai); text-transform:uppercase; opacity:.75; }
+  h1{ font-family:'Shippori Mincho',serif; font-weight:800; font-size:clamp(26px,7vw,38px); margin:6px 0 2px; color:var(--ai-deep); letter-spacing:.02em; }
+  .sub{ font-size:12.5px; color:var(--grey); margin-bottom:4px; }
+
+  .stats-strip{ display:flex; justify-content:center; gap:8px; margin:14px auto 4px; flex-wrap:wrap; padding:0 16px; }
+  .stat-chip{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; padding:6px 10px; border-radius:8px;
+    background:rgba(34,58,94,0.06); color:var(--ai-deep); border:1px solid rgba(34,58,94,0.1); white-space:nowrap;
+  }
+
+  .home-tabs{ display:flex; justify-content:center; gap:6px; margin:16px auto 14px; padding:0 12px; flex-wrap:wrap; }
+  .home-tab{
+    font-family:'JetBrains Mono',monospace; font-size:12px; padding:9px 14px; border-radius:10px;
+    border:1.5px solid var(--washi-2); background:#fff9; color:var(--grey); cursor:pointer; transition:.18s;
+    display:flex; align-items:center; gap:6px;
+  }
+  .home-tab.active{ background:var(--ai-deep); color:var(--washi); border-color:var(--ai-deep); }
+
+  .tabs{ display:flex; justify-content:center; gap:8px; margin:6px auto 10px; flex-wrap:wrap; padding:0 12px; }
+  .tab{
+    font-family:'JetBrains Mono',monospace; font-size:12px; padding:7px 14px; border-radius:999px;
+    border:1.5px solid var(--ai-deep); background:transparent; color:var(--ai-deep); cursor:pointer; transition:.18s ease;
+  }
+  .tab.active{ background:var(--ai-deep); color:var(--washi); }
+
+  .rows{ display:flex; justify-content:center; gap:6px; flex-wrap:wrap; max-width:640px; margin:0 auto 16px; padding:0 16px; }
+  .row-chip{
+    font-size:11px; font-family:'JetBrains Mono',monospace; padding:5px 9px; border-radius:6px;
+    border:1px solid var(--washi-2); background:#fff8; color:var(--grey); cursor:pointer;
+  }
+  .row-chip.active{ border-color:var(--kin); color:var(--kin); background:rgba(169,120,31,0.08); font-weight:600; }
+
+  .shared-nav{ display:flex; flex-direction:column; align-items:center; padding:0 16px; }
+  .counter{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--grey); margin-bottom:8px; }
+  .progress-wrap{ width:var(--board-w); }
+  .progress-track{ height:5px; background:var(--washi-2); border-radius:3px; overflow:hidden; }
+  .progress-fill{ height:100%; background:linear-gradient(90deg,var(--kin),var(--hanko)); width:0%; transition:width .25s ease; }
+  .progress-label{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--grey); text-align:center; margin-top:6px; margin-bottom:10px;}
+  .nav-controls{ display:flex; gap:10px; width:var(--board-w); margin-bottom:6px; }
+  button.ctl{
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; padding:11px 12px; border-radius:10px;
+    border:none; cursor:pointer; flex:1; min-width:90px; transition:.15s;
+  }
+  .ctl.prev, .ctl.next{ background:var(--washi-2); color:var(--ai-deep); }
+  .ctl.prev:hover, .ctl.next:hover{ background:#DCD2B4; }
+  .ctl.clear{ background:var(--hanko); color:#fff; }
+  .ctl.undo{ background:var(--grey); color:#fff; }
+  .ctl.mastered{ background:var(--kin); color:#fff; }
+  .ctl.mastered.done{ background:#6f5817; }
+  .ctl.audio{ background:var(--ai-deep); color:var(--washi); }
+  .ctl.shuffle{ background:var(--ai-deep); color:var(--washi); }
+  button.ctl:active{ transform:scale(.96); }
+
+  .chip-btn{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; padding:6px 9px; border-radius:8px;
+    border:1px solid var(--washi-2); background:#fff8; color:var(--ai-deep); cursor:pointer;
+  }
+  .chip-btn.on{ background:var(--ai-deep); color:var(--washi); }
+
+  .reset-link{
+    margin-top:14px; font-size:11px; color:var(--grey); text-decoration:underline;
+    cursor:pointer; background:none; border:none; font-family:'JetBrains Mono',monospace;
+  }
+
+  .view{ display:none; flex-direction:column; align-items:center; padding:6px 16px 10px; }
+  .view.active{ display:flex; }
+
+  /* --- flashcard --- */
+  .card-scene{ width:var(--board-w); height:270px; perspective:1400px; margin-top:6px; }
+  .card{ position:relative; width:100%; height:100%; transform-style:preserve-3d; transition:transform .5s cubic-bezier(.2,.8,.25,1); cursor:pointer; }
+  .card.flipped{ transform: rotateY(180deg); }
+  .face{
+    position:absolute; inset:0; backface-visibility:hidden; border-radius:18px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    box-shadow:0 18px 40px -18px rgba(21,40,64,0.35), 0 2px 0 rgba(0,0,0,0.03);
+    border:1px solid rgba(34,58,94,0.08);
+  }
+  .face.front{ background:linear-gradient(160deg,#fff 0%, #FBF8EE 100%); }
+  .face.back{ background:linear-gradient(160deg,var(--ai-deep) 0%, var(--ai) 100%); color:var(--washi); transform:rotateY(180deg); padding:16px; }
+  .kana-char{ font-family:'Shippori Mincho',serif; font-weight:700; font-size:100px; line-height:1; color:var(--sumi); }
+  .face.front .badge{ position:absolute; top:14px; left:16px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:var(--grey); text-transform:uppercase; }
+  .romaji{ font-family:'JetBrains Mono',monospace; font-weight:600; font-size:40px; letter-spacing:.03em; }
+  .romaji-sub{ font-size:12px; opacity:.7; margin-top:6px; }
+  .example-line{ font-size:11.5px; opacity:.85; margin-top:12px; text-align:center; line-height:1.5; max-width:230px; }
+  .hanko-stamp{
+    position:absolute; bottom:12px; right:14px; width:42px; height:42px; border:3px solid var(--hanko); border-radius:8px;
+    display:flex; align-items:center; justify-content:center; color:var(--hanko); font-family:'Shippori Mincho',serif;
+    font-weight:800; font-size:14px; transform:rotate(-8deg) scale(0); opacity:0;
+    transition:transform .35s cubic-bezier(.34,1.56,.64,1), opacity .25s; pointer-events:none; mix-blend-mode:multiply;
+  }
+  .face.front.known .hanko-stamp{ transform:rotate(-8deg) scale(1); opacity:.85; }
+  .hint{ margin-top:12px; font-size:11.5px; color:var(--grey); text-align:center; }
+  .audio-mini{ position:absolute; top:12px; right:14px; font-size:16px; background:none; border:none; cursor:pointer; opacity:.7; }
+
+  /* --- board --- */
+  .target-strip{ display:flex; align-items:center; gap:14px; margin-bottom:10px; }
+  .target-kana{ font-family:'Noto Sans JP','Shippori Mincho',serif; font-weight:700; font-size:42px; color:var(--ai-deep); line-height:1; }
+  .target-meta{ text-align:left; }
+  .target-romaji{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:19px; color:var(--sumi); }
+  .target-info{ font-size:11px; color:var(--grey); margin-top:2px; }
+  .board-example{ font-size:11px; color:var(--ai); margin-top:4px; max-width:220px; line-height:1.4; }
+
+  .board-wrap{
+    width:var(--board-w); aspect-ratio:1/1; position:relative; border-radius:14px;
+    box-shadow:0 18px 40px -18px rgba(21,40,64,0.35), 0 2px 0 rgba(0,0,0,0.03);
+    background:#fffdf7; border:1px solid rgba(34,58,94,0.1); overflow:hidden;
+  }
+  .board-wrap canvas{ position:absolute; inset:0; width:100%; height:100%; }
+  #guideCanvas{ transition:opacity .25s ease; }
+
+  .lock-overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:rgba(242,236,221,0.82); backdrop-filter:blur(1px); cursor:pointer; gap:10px; text-align:center; padding:16px;
+    transition:opacity .2s ease;
+  }
+  .lock-overlay.hidden{ opacity:0; pointer-events:none; }
+  .pencil-icon{ font-size:38px; }
+  .lock-text{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ai-deep); max-width:220px; line-height:1.5; }
+
+  .board-controls-top{ display:flex; justify-content:space-between; width:var(--board-w); margin-top:10px; flex-wrap:wrap; gap:6px; }
+
+  /* --- quiz --- */
+  .quiz-kana{ font-family:'Noto Sans JP','Shippori Mincho',serif; font-weight:700; font-size:88px; color:var(--ai-deep); text-align:center; margin:8px 0 18px; }
+  .quiz-input-row{ display:flex; gap:8px; width:var(--board-w); }
+  .quiz-input{
+    flex:1; font-family:'JetBrains Mono',monospace; font-size:16px; padding:12px 14px; border-radius:10px;
+    border:1.5px solid var(--washi-2); background:#fffdf7; color:var(--sumi);
+  }
+  .quiz-input:focus{ outline:none; border-color:var(--ai-deep); }
+  .quiz-input.correct{ border-color:#3a7d44; }
+  .quiz-input.wrong{ border-color:var(--hanko); }
+  .quiz-feedback{ font-family:'JetBrains Mono',monospace; font-size:13px; text-align:center; margin-top:12px; min-height:18px; }
+  .quiz-feedback.correct{ color:#2f6a38; }
+  .quiz-feedback.wrong{ color:var(--hanko); }
+  .quiz-example{ font-size:11.5px; color:var(--grey); text-align:center; margin-top:8px; max-width:var(--board-w); line-height:1.5; min-height:16px; }
+  .quiz-score{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--grey); margin-top:16px; }
+
+  /* --- table --- */
+  .table-progress{
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ai-deep);
+    text-align:center; margin-bottom:18px; padding:10px 16px; background:rgba(169,120,31,0.08);
+    border:1px solid rgba(169,120,31,0.25); border-radius:10px; max-width:420px;
+  }
+  .table-section-title{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ai); opacity:.8; margin:4px 0 10px; align-self:flex-start; margin-left:2px;
+  }
+  .kt-wrap{ width:100%; display:flex; flex-direction:column; align-items:center; }
+  .kt-script-label{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--kin); margin:2px 0 8px; align-self:flex-start; margin-left:2px; font-weight:600;
+  }
+  .kt-script-label:not(:first-child){ margin-top:16px; }
+  .kt-table{ display:grid; gap:7px; margin-bottom:20px; width:100%; max-width:420px; }
+  .kt-table.cols-5{ grid-template-columns:repeat(5,1fr); }
+  .kt-table.cols-3{ grid-template-columns:repeat(3,1fr); }
+  .kt-cell{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    background:#fffdf7; border:1px solid rgba(34,58,94,0.12); border-radius:10px; padding:8px 3px;
+    min-height:76px; cursor:pointer; user-select:none; transition:.15s;
+  }
+  .kt-cell.empty{ background:transparent; border:none; cursor:default; }
+  .kt-cell.mastered{ background:rgba(169,120,31,0.14); border-color:var(--kin); }
+  .kt-single{
+    position:relative; font-family:'Noto Sans JP','Shippori Mincho',serif; font-weight:700;
+    font-size:26px; color:var(--sumi); line-height:1.1;
+  }
+  .kt-cell.mastered .kt-single{ color:var(--kin); }
+  .kt-badge{ position:absolute; top:-6px; right:-11px; font-size:10px; color:var(--kin); opacity:0; transition:opacity .15s; }
+  .kt-cell.mastered .kt-badge{ opacity:1; }
+  .kt-romaji{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--grey); margin-top:3px; }
+  .table-hint{ font-size:11px; color:var(--grey); text-align:center; max-width:420px; margin-bottom:16px; line-height:1.6; }
+
+  .note{ max-width:var(--board-w); margin-top:20px; font-size:11px; color:var(--grey); text-align:center; line-height:1.6; }
+  .note b{ color:var(--ai-deep); }
+  footer{ text-align:center; margin-top:30px; font-size:11px; color:var(--grey); font-family:'JetBrains Mono',monospace; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">五十音 — satu dojo, empat latihan</div>
+  <h1>Kana Dojo</h1>
+  <div class="sub">hafalin, tulis, uji, dan ulangi hiragana & katakana dalam satu tempat</div>
+</header>
+
+<div class="stats-strip" id="statsStrip"></div>
+
+<nav class="home-tabs" id="homeTabs">
+  <button class="home-tab active" data-view="flashcard">🗂️ flashcard</button>
+  <button class="home-tab" data-view="board">✍️ papan tulis</button>
+  <button class="home-tab" data-view="quiz">🧪 kuis</button>
+  <button class="home-tab" data-view="table">📊 tabel</button>
+</nav>
+
+<div class="tabs" id="scriptTabs">
+  <button class="tab active" data-script="hiragana">hiragana</button>
+  <button class="tab" data-script="katakana">katakana</button>
+  <button class="tab" data-script="both">campur</button>
+</div>
+
+<div class="rows" id="rowFilter"></div>
+
+<div class="shared-nav">
+  <div class="counter" id="deckCounter">huruf 1 / 46</div>
+  <div class="progress-wrap">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">0 / 46 sudah dikuasai</div>
+  </div>
+  <div class="nav-controls">
+    <button class="ctl prev" id="btnPrev">‹ sebelum</button>
+    <button class="ctl next" id="btnNext">sesudah ›</button>
+  </div>
+  <div class="nav-controls" style="margin-top:2px;">
+    <button class="chip-btn" id="btnAdaptive" style="flex:1;">🎯 mode adaptif: mati</button>
+  </div>
+</div>
+
+<!-- ================= FLASHCARD VIEW ================= -->
+<section class="view active" id="view-flashcard">
+  <div class="card-scene">
+    <div class="card" id="card">
+      <div class="face front" id="cardFront">
+        <span class="badge" id="scriptBadge">HIRAGANA</span>
+        <button class="audio-mini" id="btnAudioCard" title="dengar pelafalan">🔊</button>
+        <div class="kana-char" id="kanaChar">あ</div>
+        <div class="hanko-stamp" id="hankoStamp">已</div>
+      </div>
+      <div class="face back">
+        <div class="romaji" id="romajiText">a</div>
+        <div class="romaji-sub" id="groupText">vokal</div>
+        <div class="example-line" id="exampleLine"></div>
+      </div>
+    </div>
+  </div>
+  <div class="hint">ketuk kartu buat buka/tutup · panah kiri-kanan &amp; spasi juga bisa</div>
+  <div class="nav-controls" style="margin-top:16px;">
+    <button class="ctl mastered" id="btnKnownCard">tandai hafal ✓</button>
+    <button class="ctl shuffle" id="btnShuffle">acak ⟳</button>
+  </div>
+  <button class="reset-link" id="btnResetProgress">reset semua progres & statistik</button>
+</section>
+
+<!-- ================= BOARD VIEW ================= -->
+<section class="view" id="view-board">
+  <div class="target-strip">
+    <div class="target-kana" id="targetKana">あ</div>
+    <div class="target-meta">
+      <div class="target-romaji" id="targetRomaji">a</div>
+      <div class="target-info" id="targetInfo">3 goresan · vokal</div>
+      <div class="board-example" id="boardExampleLine"></div>
+    </div>
+  </div>
+
+  <div class="board-wrap" id="boardWrap">
+    <canvas id="guideCanvas"></canvas>
+    <canvas id="inkCanvas"></canvas>
+    <div class="lock-overlay" id="lockOverlay">
+      <div class="pencil-icon">✏️</div>
+      <div class="lock-text">ketuk buat mulai menulis<br>(biar ga kepencet pas scroll)</div>
+    </div>
+  </div>
+
+  <div class="board-controls-top">
+    <button class="chip-btn on" id="btnToggleGuide">bayangan: nyala</button>
+    <button class="chip-btn on" id="btnToggleGrid">grid: ada</button>
+    <button class="chip-btn" id="btnLockBoard">🔒 kunci papan</button>
+  </div>
+
+  <div class="nav-controls" style="margin-top:16px;">
+    <button class="ctl undo" id="btnUndo">urungkan ↺</button>
+    <button class="ctl clear" id="btnClear">hapus ✕</button>
+  </div>
+  <div class="nav-controls" style="margin-top:10px;">
+    <button class="ctl audio" id="btnAudioBoard">🔊 dengar</button>
+    <button class="ctl mastered" id="btnMasteredBoard">tandai lancar ✓</button>
+  </div>
+
+  <div class="note">
+    <b>catatan:</b> jumlah goresan itu acuan umum dari buku pelajaran, sebagian huruf ada variasi kecil tergantung sumber. buat animasi urutan goresan yang presisi, cek jisho.org atau tofugu ya.
+  </div>
+</section>
+
+<!-- ================= QUIZ VIEW ================= -->
+<section class="view" id="view-quiz">
+  <div class="quiz-kana" id="quizKana">あ</div>
+  <div class="quiz-input-row">
+    <input type="text" class="quiz-input" id="quizInput" placeholder="ketik romaji-nya..." autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="ctl mastered" id="btnQuizCheck" style="flex:0 0 auto; min-width:74px;">cek</button>
+    <button class="ctl next" id="btnQuizNext" style="flex:0 0 auto; min-width:74px; display:none;">lanjut ›</button>
+  </div>
+  <div class="quiz-feedback" id="quizFeedback"></div>
+  <div class="quiz-example" id="quizExample"></div>
+  <div class="quiz-score" id="quizScore">benar 0 / 0</div>
+</section>
+
+<!-- ================= TABLE VIEW ================= -->
+<section class="view" id="view-table">
+  <div class="table-hint">ketuk salah satu huruf (hiragana atau katakananya) buat tandai/batalkan "udah dikuasai". label kuning nempel di huruf yang udah kamu kuasai.</div>
+  <div class="table-progress" id="tableProgress">0 / 208 dikuasai (hiragana + katakana)</div>
+
+  <div class="table-section-title">gojuon dasar (46 pasang)</div>
+  <div class="kt-wrap" id="tblMain"></div>
+
+  <div class="table-section-title">dakuten &amp; handakuten (25 pasang)</div>
+  <div class="kt-wrap" id="tblDaku"></div>
+
+  <div class="table-section-title">yōon (33 pasang)</div>
+  <div class="kt-wrap" id="tblYoon"></div>
+</section>
+
+<footer>progres, statistik kuis, dan streak harian tersimpan otomatis di browser ini</footer>
+
+<script>
+// ---------- DATA (kana, romaji, group, goresan, [contoh kata, bacaan, arti]) ----------
+const HIRAGANA = [
+  ["あ","a","vokal",3,"あさ","asa","pagi"],["い","i","vokal",2,"いぬ","inu","anjing"],
+  ["う","u","vokal",2,"うみ","umi","laut"],["え","e","vokal",2,"えき","eki","stasiun"],
+  ["お","o","vokal",3,"おちゃ","ocha","teh"],
+  ["か","ka","k",3,"かさ","kasa","payung"],["き","ki","k",4,"きいろ","kiiro","warna kuning"],
+  ["く","ku","k",1,"くつ","kutsu","sepatu"],["け","ke","k",3,"けしごむ","keshigomu","penghapus"],
+  ["こ","ko","k",2,"こども","kodomo","anak"],
+  ["さ","sa","s",3,"さかな","sakana","ikan"],["し","shi","s",1,"しろ","shiro","putih"],
+  ["す","su","s",2,"すし","sushi","sushi"],["せ","se","s",3,"せんせい","sensei","guru"],
+  ["そ","so","s",1,"そら","sora","langit"],
+  ["た","ta","t",4,"たまご","tamago","telur"],["ち","chi","t",2,"ちず","chizu","peta"],
+  ["つ","tsu","t",1,"つき","tsuki","bulan"],["て","te","t",1,"てがみ","tegami","surat"],
+  ["と","to","t",2,"とけい","tokei","jam"],
+  ["な","na","n",4,"なつ","natsu","musim panas"],["に","ni","n",3,"にく","niku","daging"],
+  ["ぬ","nu","n",2,"ぬの","nuno","kain"],["ね","ne","n",2,"ねこ","neko","kucing"],
+  ["の","no","n",1,"のみもの","nomimono","minuman"],
+  ["は","ha","h",3,"はな","hana","bunga"],["ひ","hi","h",1,"ひと","hito","orang"],
+  ["ふ","fu","h",4,"ふゆ","fuyu","musim dingin"],["へ","he","h",1,"へや","heya","kamar"],
+  ["ほ","ho","h",4,"ほし","hoshi","bintang"],
+  ["ま","ma","m",3,"まど","mado","jendela"],["み","mi","m",2,"みず","mizu","air"],
+  ["む","mu","m",3,"むし","mushi","serangga"],["め","me","m",2,"めがね","megane","kacamata"],
+  ["も","mo","m",2,"もり","mori","hutan"],
+  ["や","ya","y",3,"やま","yama","gunung"],["ゆ","yu","y",2,"ゆき","yuki","salju"],
+  ["よ","yo","y",2,"よる","yoru","malam"],
+  ["ら","ra","r",2,"らいねん","rainen","tahun depan"],["り","ri","r",2,"りんご","ringo","apel"],
+  ["る","ru","r",1,"るす","rusu","tidak di rumah"],["れ","re","r",2,"れきし","rekishi","sejarah"],
+  ["ろ","ro","r",1,"ろうそく","rousoku","lilin"],
+  ["わ","wa","w",2,"わたし","watashi","saya"],
+  ["を","wo","w",3,"","","partikel objek, hampir tidak pernah mengawali kata"],
+  ["ん","n","w",1,"","","tidak pernah mengawali kata, cth: ほん (hon, buku)"],
+  ["が","ga","dakuten",3,"がっこう","gakkou","sekolah"],["ぎ","gi","dakuten",4,"ぎんこう","ginkou","bank"],
+  ["ぐ","gu","dakuten",1,"ぐあい","guai","kondisi/keadaan tubuh"],["げ","ge","dakuten",3,"げんき","genki","sehat/semangat"],
+  ["ご","go","dakuten",2,"ごはん","gohan","nasi"],
+  ["ざ","za","dakuten",3,"ざっし","zasshi","majalah"],["じ","ji","dakuten",1,"じかん","jikan","waktu"],
+  ["ず","zu","dakuten",2,"ずつう","zutsuu","sakit kepala"],["ぜ","ze","dakuten",3,"ぜんぶ","zenbu","semua"],
+  ["ぞ","zo","dakuten",1,"ぞう","zou","gajah"],
+  ["だ","da","dakuten",4,"だいがく","daigaku","universitas"],
+  ["ぢ","ji","dakuten",2,"","","jarang di awal kata, muncul di tengah cth はなぢ (hanaji, mimisan)"],
+  ["づ","zu","dakuten",1,"","","jarang di awal kata, muncul di tengah cth つづく (tsuzuku, berlanjut)"],
+  ["で","de","dakuten",1,"でんわ","denwa","telepon"],["ど","do","dakuten",2,"どこ","doko","di mana"],
+  ["ば","ba","dakuten",3,"ばしょ","basho","tempat"],["び","bi","dakuten",1,"びっくり","bikkuri","kaget"],
+  ["ぶ","bu","dakuten",4,"ぶた","buta","babi"],["べ","be","dakuten",1,"べんきょう","benkyou","belajar"],
+  ["ぼ","bo","dakuten",4,"ぼうし","boushi","topi"],
+  ["ぱ","pa","handakuten",3,"ぱん","pan","roti (biasa ditulis パン)"],
+  ["ぴ","pi","handakuten",1,"ぴかぴか","pikapika","berkilau"],
+  ["ぷ","pu","handakuten",4,"ぷんぷん","punpun","ngambek/bau menyengat"],
+  ["ぺ","pe","handakuten",1,"ぺらぺら","perapera","lancar (bahasa)"],
+  ["ぽ","po","handakuten",4,"ぽかぽか","pokapoka","hangat (cuaca)"],
+  ["きゃ","kya","yōon",4],["きゅ","kyu","yōon",4],["きょ","kyo","yōon",4],
+  ["しゃ","sha","yōon",1],["しゅ","shu","yōon",1],["しょ","sho","yōon",1],
+  ["ちゃ","cha","yōon",2],["ちゅ","chu","yōon",2],["ちょ","cho","yōon",2],
+  ["にゃ","nya","yōon",3],["にゅ","nyu","yōon",3],["にょ","nyo","yōon",3],
+  ["ひゃ","hya","yōon",1],["ひゅ","hyu","yōon",1],["ひょ","hyo","yōon",1],
+  ["みゃ","mya","yōon",2],["みゅ","myu","yōon",2],["みょ","myo","yōon",2],
+  ["りゃ","rya","yōon",2],["りゅ","ryu","yōon",2],["りょ","ryo","yōon",2],
+  ["ぎゃ","gya","yōon",4],["ぎゅ","gyu","yōon",4],["ぎょ","gyo","yōon",4],
+  ["じゃ","ja","yōon",1],["じゅ","ju","yōon",1],["じょ","jo","yōon",1],
+  ["びゃ","bya","yōon",1],["びゅ","byu","yōon",1],["びょ","byo","yōon",1],
+  ["ぴゃ","pya","yōon",1],["ぴゅ","pyu","yōon",1],["ぴょ","pyo","yōon",1],
+];
+const KATAKANA = [
+  ["ア","a","vokal",2,"アメリカ","amerika","Amerika"],["イ","i","vokal",2,"イギリス","igirisu","Inggris"],
+  ["ウ","u","vokal",3,"ウイルス","uirusu","virus"],["エ","e","vokal",3,"エレベーター","erebeetaa","lift"],
+  ["オ","o","vokal",3,"オレンジ","orenji","jeruk/oranye"],
+  ["カ","ka","k",2,"カメラ","kamera","kamera"],["キ","ki","k",3,"キロ","kiro","kilo"],
+  ["ク","ku","k",2,"クラス","kurasu","kelas"],["ケ","ke","k",3,"ケーキ","keeki","kue"],
+  ["コ","ko","k",2,"コーヒー","koohii","kopi"],
+  ["サ","sa","s",3,"サラダ","sarada","salad"],["シ","shi","s",3,"システム","shisutemu","sistem"],
+  ["ス","su","s",2,"スープ","suupu","sup"],["セ","se","s",2,"セーター","seetaa","sweter"],
+  ["ソ","so","s",2,"ソファ","sofa","sofa"],
+  ["タ","ta","t",3,"タクシー","takushii","taksi"],["チ","chi","t",3,"チーズ","chiizu","keju"],
+  ["ツ","tsu","t",3,"ツアー","tsuaa","tur"],["テ","te","t",3,"テレビ","terebi","televisi"],
+  ["ト","to","t",2,"トマト","tomato","tomat"],
+  ["ナ","na","n",2,"ナイフ","naifu","pisau"],["ニ","ni","n",2,"ニックネーム","nikkuneemu","nama panggilan"],
+  ["ヌ","nu","n",2,"ヌードル","nuudoru","mi/noodle"],["ネ","ne","n",4,"ネクタイ","nekutai","dasi"],
+  ["ノ","no","n",1,"ノート","nooto","buku catatan"],
+  ["ハ","ha","h",2,"ハート","haato","hati/love"],["ヒ","hi","h",2,"ヒーロー","hiiroo","pahlawan"],
+  ["フ","fu","h",1,"フォーク","fooku","garpu"],["ヘ","he","h",1,"ヘリコプター","herikoputaa","helikopter"],
+  ["ホ","ho","h",4,"ホテル","hoteru","hotel"],
+  ["マ","ma","m",2,"マスク","masuku","masker"],["ミ","mi","m",3,"ミルク","miruku","susu"],
+  ["ム","mu","m",2,"ムービー","muubii","film"],["メ","me","m",2,"メニュー","menyuu","menu"],
+  ["モ","mo","m",3,"モデル","moderu","model"],
+  ["ヤ","ya","y",2,"ヤード","yaado","yard (satuan)"],["ユ","yu","y",2,"ユーモア","yuumoa","humor"],
+  ["ヨ","yo","y",3,"ヨーグルト","yooguruto","yogurt"],
+  ["ラ","ra","r",2,"ラジオ","rajio","radio"],["リ","ri","r",2,"リボン","ribon","pita"],
+  ["ル","ru","r",2,"ルール","ruuru","aturan"],["レ","re","r",1,"レモン","remon","lemon"],
+  ["ロ","ro","r",3,"ロボット","robotto","robot"],
+  ["ワ","wa","w",2,"ワイン","wain","anggur/wine"],
+  ["ヲ","wo","w",3,"","","hampir tidak pernah dipakai untuk kata"],
+  ["ン","n","w",2,"","","tidak pernah mengawali kata"],
+  ["ガ","ga","dakuten",2,"ガム","gamu","permen karet"],["ギ","gi","dakuten",3,"ギター","gitaa","gitar"],
+  ["グ","gu","dakuten",2,"グラス","gurasu","gelas"],["ゲ","ge","dakuten",3,"ゲーム","geemu","permainan/game"],
+  ["ゴ","go","dakuten",2,"ゴルフ","gorufu","golf"],
+  ["ザ","za","dakuten",3,"ザリガニ","zarigani","udang karang"],["ジ","ji","dakuten",3,"ジム","jimu","gym"],
+  ["ズ","zu","dakuten",2,"ズボン","zubon","celana panjang"],["ゼ","ze","dakuten",2,"ゼロ","zero","nol"],
+  ["ゾ","zo","dakuten",2,"ゾンビ","zonbi","zombie"],
+  ["ダ","da","dakuten",3,"ダンス","dansu","tari/dance"],
+  ["ヂ","ji","dakuten",3,"","","sangat jarang dipakai di kata modern"],
+  ["ヅ","zu","dakuten",3,"","","sangat jarang dipakai di kata modern"],
+  ["デ","de","dakuten",3,"デザイン","dezain","desain"],["ド","do","dakuten",2,"ドア","doa","pintu"],
+  ["バ","ba","dakuten",2,"バス","basu","bus"],["ビ","bi","dakuten",2,"ビール","biiru","bir"],
+  ["ブ","bu","dakuten",1,"ブログ","burogu","blog"],["ベ","be","dakuten",1,"ベッド","beddo","tempat tidur"],
+  ["ボ","bo","dakuten",4,"ボール","booru","bola"],
+  ["パ","pa","handakuten",2,"パン","pan","roti"],["ピ","pi","handakuten",2,"ピザ","piza","pizza"],
+  ["プ","pu","handakuten",1,"プール","puuru","kolam renang"],["ペ","pe","handakuten",1,"ペン","pen","pena"],
+  ["ポ","po","handakuten",4,"ポケット","poketto","kantong"],
+  ["キャ","kya","yōon",4],["キュ","kyu","yōon",4],["キョ","kyo","yōon",4],
+  ["シャ","sha","yōon",4],["シュ","shu","yōon",4],["ショ","sho","yōon",4],
+  ["チャ","cha","yōon",4],["チュ","chu","yōon",4],["チョ","cho","yōon",4],
+  ["ニャ","nya","yōon",3],["ニュ","nyu","yōon",3],["ニョ","nyo","yōon",3],
+  ["ヒャ","hya","yōon",3],["ヒュ","hyu","yōon",3],["ヒョ","hyo","yōon",3],
+  ["ミャ","mya","yōon",4],["ミュ","myu","yōon",4],["ミョ","myo","yōon",4],
+  ["リャ","rya","yōon",3],["リュ","ryu","yōon",3],["リョ","ryo","yōon",3],
+  ["ギャ","gya","yōon",4],["ギュ","gyu","yōon",4],["ギョ","gyo","yōon",4],
+  ["ジャ","ja","yōon",4],["ジュ","ju","yōon",4],["ジョ","jo","yōon",4],
+  ["ビャ","bya","yōon",3],["ビュ","byu","yōon",3],["ビョ","byo","yōon",3],
+  ["ピャ","pya","yōon",3],["ピュ","pyu","yōon",3],["ピョ","pyo","yōon",3],
+];
+const ROW_ORDER = ["vokal","k","s","t","n","h","m","y","r","w","dakuten","handakuten","yōon"];
+
+// ---------- STATE ----------
+let state = {
+  activeView:"flashcard", script:"hiragana", activeRow:"all",
+  deck:[], idx:0, flippedCard:false,
+  mastered:new Set(), strokes:[],
+  boardLocked:true,
+  wrongCount:{}, quizStats:{correct:0,total:0},
+  adaptiveMode:false,
+  streak:0, lastVisitDate:null,
+};
+
+function toObj(x){
+  return { kana:x[0], romaji:x[1], group:x[2], count:x[3], ex:x[4]||null, exReading:x[5]||null, exMeaning:x[6]||null };
+}
+function buildFullList(script){
+  if(script==="hiragana") return HIRAGANA.map(x=>({...toObj(x),script:"hiragana"}));
+  if(script==="katakana") return KATAKANA.map(x=>({...toObj(x),script:"katakana"}));
+  return [...HIRAGANA.map(x=>({...toObj(x),script:"hiragana"})), ...KATAKANA.map(x=>({...toObj(x),script:"katakana"}))];
+}
+function keyOf(item){ return item.script+":"+item.kana; }
+function currentItem(){ return state.deck[state.idx]; }
+function exampleTextFor(item){
+  if(!item) return "";
+  if(item.ex) return `contoh: ${item.ex} (${item.exReading}) — ${item.exMeaning}`;
+  if(item.exMeaning) return item.exMeaning;
+  return "kombinasi huruf — gabungkan bunyi dasarnya buat mengingat";
+}
+
+// ---------- PENYIMPANAN OTOMATIS (localStorage) ----------
+const LS_KEY = "kanaDojoData_v2";
+function saveState(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      mastered: Array.from(state.mastered),
+      wrongCount: state.wrongCount,
+      quizStats: state.quizStats,
+      adaptiveMode: state.adaptiveMode,
+      streak: state.streak,
+      lastVisitDate: state.lastVisitDate,
+    }));
+  }catch(e){ /* localStorage ga bisa dipakai (mode privat dll), progres ga kesimpen */ }
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    if(Array.isArray(data.mastered)) state.mastered = new Set(data.mastered);
+    if(data.wrongCount) state.wrongCount = data.wrongCount;
+    if(data.quizStats) state.quizStats = data.quizStats;
+    if(typeof data.adaptiveMode === "boolean") state.adaptiveMode = data.adaptiveMode;
+    if(typeof data.streak === "number") state.streak = data.streak;
+    if(data.lastVisitDate) state.lastVisitDate = data.lastVisitDate;
+  }catch(e){ /* data lama rusak/ga kebaca, mulai dari default */ }
+}
+function updateStreak(){
+  const today = new Date().toDateString();
+  if(state.lastVisitDate !== today){
+    const yesterday = new Date(Date.now()-86400000).toDateString();
+    state.streak = (state.lastVisitDate === yesterday) ? state.streak+1 : 1;
+    state.lastVisitDate = today;
+    saveState();
+  }
+}
+function renderStatsStrip(){
+  const totalAll = HIRAGANA.length + KATAKANA.length;
+  const masteredCount = state.mastered.size;
+  const acc = state.quizStats.total ? Math.round((state.quizStats.correct/state.quizStats.total)*100) : 0;
+  document.getElementById("statsStrip").innerHTML =
+    `<span class="stat-chip">🔥 ${state.streak} hari beruntun</span>`+
+    `<span class="stat-chip">✓ ${masteredCount} / ${totalAll} dikuasai</span>`+
+    `<span class="stat-chip">🎯 kuis ${acc}% (${state.quizStats.correct}/${state.quizStats.total})</span>`;
+}
+
+// ---------- HOME NAV ----------
+document.querySelectorAll(".home-tab").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".home-tab").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    document.getElementById("view-"+btn.dataset.view).classList.add("active");
+    state.activeView = btn.dataset.view;
+    if(btn.dataset.view === "board"){ lockBoard(true); requestAnimationFrame(sizeBoardCanvases); }
+    if(btn.dataset.view === "quiz"){ resetQuizUI(); document.getElementById("quizInput").focus(); }
+  });
+});
+
+// ---------- SCRIPT TABS & ROW FILTER ----------
+document.querySelectorAll("#scriptTabs .tab").forEach(tab=>{
+  tab.addEventListener("click", ()=>{
+    document.querySelectorAll("#scriptTabs .tab").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    state.script = tab.dataset.script;
+    state.activeRow = "all";
+    rebuildDeck();
+    buildAllTables();
+    renderRowChips();
+  });
+});
+function renderRowChips(){
+  const wrap = document.getElementById("rowFilter");
+  wrap.innerHTML = "";
+  const allChip = document.createElement("button");
+  allChip.className = "row-chip"+(state.activeRow==="all"?" active":"");
+  allChip.textContent = "semua";
+  allChip.onclick = ()=>{ state.activeRow="all"; rebuildDeck(); renderRowChips(); };
+  wrap.appendChild(allChip);
+  ROW_ORDER.forEach(r=>{
+    const chip = document.createElement("button");
+    chip.className = "row-chip"+(state.activeRow===r?" active":"");
+    chip.textContent = r;
+    chip.onclick = ()=>{ state.activeRow=r; rebuildDeck(); renderRowChips(); };
+    wrap.appendChild(chip);
+  });
+}
+
+// ---------- DECK (biasa & adaptif/spaced-repetition ringan) ----------
+function weightFor(item){
+  let w = 1;
+  if(!state.mastered.has(keyOf(item))) w += 2;
+  const wc = state.wrongCount[keyOf(item)] || 0;
+  w += Math.min(wc,3)*2;
+  return w;
+}
+function shuffleArr(arr){
+  for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+function buildDeckList(){
+  const full = buildFullList(state.script);
+  const filtered = state.activeRow==="all" ? full : full.filter(it=>it.group===state.activeRow);
+  const base = filtered.length ? filtered : full;
+  if(!state.adaptiveMode) return base.slice();
+  const expanded = [];
+  base.forEach(item=>{ const w = weightFor(item); for(let i=0;i<w;i++) expanded.push(item); });
+  return shuffleArr(expanded);
+}
+function rebuildDeck(){
+  state.deck = buildDeckList();
+  state.idx = 0; state.flippedCard = false; state.strokes = [];
+  render();
+  resetQuizUI();
+}
+function shuffleDeck(){
+  let list = buildDeckList();
+  if(!state.adaptiveMode) list = shuffleArr(list);
+  state.deck = list;
+  state.idx = 0; state.flippedCard = false; state.strokes = [];
+  render();
+  resetQuizUI();
+}
+document.getElementById("btnShuffle").addEventListener("click", shuffleDeck);
+document.getElementById("btnAdaptive").addEventListener("click", ()=>{
+  state.adaptiveMode = !state.adaptiveMode;
+  document.getElementById("btnAdaptive").textContent = "🎯 mode adaptif: "+(state.adaptiveMode?"nyala":"mati");
+  document.getElementById("btnAdaptive").classList.toggle("on", state.adaptiveMode);
+  saveState();
+  rebuildDeck();
+});
+
+// ---------- SHARED RENDER ----------
+function render(){
+  const item = currentItem();
+  if(!item) return;
+
+  document.getElementById("deckCounter").textContent = `huruf ${state.idx+1} / ${state.deck.length}`;
+  const totalAll = buildFullList(state.script).length;
+  const masteredAll = buildFullList(state.script).filter(it=>state.mastered.has(keyOf(it))).length;
+  const pct = totalAll ? Math.round((masteredAll/totalAll)*100) : 0;
+  document.getElementById("progressFill").style.width = pct+"%";
+  document.getElementById("progressLabel").textContent = `${masteredAll} / ${totalAll} sudah dikuasai`;
+  updateTableMarks();
+  renderStatsStrip();
+
+  // flashcard
+  document.getElementById("kanaChar").textContent = item.kana;
+  document.getElementById("romajiText").textContent = item.romaji;
+  document.getElementById("groupText").textContent = item.group + (state.script==="both" ? " · "+item.script : "");
+  document.getElementById("exampleLine").textContent = exampleTextFor(item);
+  document.getElementById("scriptBadge").textContent = item.script.toUpperCase();
+  document.getElementById("card").classList.toggle("flipped", state.flippedCard);
+  const isMastered = state.mastered.has(keyOf(item));
+  document.getElementById("cardFront").classList.toggle("known", isMastered);
+  const kc = document.getElementById("btnKnownCard");
+  kc.textContent = isMastered ? "batalkan hafal ✕" : "tandai hafal ✓";
+  kc.classList.toggle("done", isMastered);
+
+  // board
+  document.getElementById("targetKana").textContent = item.kana;
+  document.getElementById("targetRomaji").textContent = item.romaji;
+  document.getElementById("targetInfo").textContent = `${item.count} goresan · ${item.group}${state.script==="both" ? " · "+item.script : ""}`;
+  document.getElementById("boardExampleLine").textContent = exampleTextFor(item);
+  const mb = document.getElementById("btnMasteredBoard");
+  mb.textContent = isMastered ? "batalkan lancar ✕" : "tandai lancar ✓";
+  mb.classList.toggle("done", isMastered);
+  drawGuide();
+}
+
+function next(){ state.idx=(state.idx+1)%state.deck.length; state.flippedCard=false; state.strokes=[]; render(); resetQuizUI(); }
+function prev(){ state.idx=(state.idx-1+state.deck.length)%state.deck.length; state.flippedCard=false; state.strokes=[]; render(); resetQuizUI(); }
+document.getElementById("btnNext").addEventListener("click", next);
+document.getElementById("btnPrev").addEventListener("click", prev);
+
+document.addEventListener("keydown", (e)=>{
+  if(document.activeElement && document.activeElement.id === "quizInput") return;
+  if(e.code === "ArrowRight") next();
+  if(e.code === "ArrowLeft") prev();
+  if(e.code === "Space" && state.activeView==="flashcard"){ e.preventDefault(); flipCard(); }
+});
+
+function toggleMastered(){
+  const item = currentItem();
+  const k = keyOf(item);
+  if(state.mastered.has(k)) state.mastered.delete(k); else state.mastered.add(k);
+  saveState();
+  render();
+}
+document.getElementById("btnKnownCard").addEventListener("click", toggleMastered);
+document.getElementById("btnMasteredBoard").addEventListener("click", toggleMastered);
+
+function resetProgress(){
+  if(!confirm("yakin mau hapus semua progres (hafalan, statistik kuis, riwayat salah)? streak harian ga ikut kehapus. tindakan ini ga bisa dibatalin.")) return;
+  state.mastered.clear();
+  state.wrongCount = {};
+  state.quizStats = {correct:0,total:0};
+  saveState();
+  render();
+  resetQuizUI();
+}
+document.getElementById("btnResetProgress").addEventListener("click", resetProgress);
+
+// ---------- AUDIO (Web Speech API, jalan langsung di browser) ----------
+function speakCurrent(){
+  const item = currentItem();
+  if(!item || !window.speechSynthesis) return;
+  const utter = new SpeechSynthesisUtterance(item.kana);
+  utter.lang = "ja-JP";
+  utter.rate = 0.75;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+document.getElementById("btnAudioCard").addEventListener("click", (e)=>{ e.stopPropagation(); speakCurrent(); });
+document.getElementById("btnAudioBoard").addEventListener("click", speakCurrent);
+
+// ---------- FLASHCARD ----------
+function flipCard(){ state.flippedCard = !state.flippedCard; render(); }
+document.getElementById("card").addEventListener("click", flipCard);
+
+// ---------- BOARD (papan tulis utama) ----------
+const boardWrap = document.getElementById("boardWrap");
+const guideCanvas = document.getElementById("guideCanvas");
+const inkCanvas = document.getElementById("inkCanvas");
+const gCtx = guideCanvas.getContext("2d");
+const iCtx = inkCanvas.getContext("2d");
+const lockOverlay = document.getElementById("lockOverlay");
+
+function sizeBoardCanvases(){
+  const rect = boardWrap.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  [guideCanvas, inkCanvas].forEach(c=>{ c.width = rect.width*dpr; c.height = rect.height*dpr; });
+  gCtx.setTransform(dpr,0,0,dpr,0,0);
+  iCtx.setTransform(dpr,0,0,dpr,0,0);
+  drawGuide(); redrawInk();
+}
+let gridOn = true, guideOn = true;
+function drawGuide(){
+  const rect = boardWrap.getBoundingClientRect();
+  const w = rect.width, h = rect.height;
+  gCtx.clearRect(0,0,w,h);
+  if(gridOn){
+    gCtx.strokeStyle = "rgba(34,58,94,0.16)"; gCtx.lineWidth = 1;
+    gCtx.strokeRect(1,1,w-2,h-2);
+    gCtx.setLineDash([4,5]);
+    gCtx.beginPath(); gCtx.moveTo(w/2,0); gCtx.lineTo(w/2,h); gCtx.moveTo(0,h/2); gCtx.lineTo(w,h/2); gCtx.stroke();
+    gCtx.setLineDash([]);
+  }
+  const item = currentItem();
+  if(item){
+    gCtx.save(); gCtx.globalAlpha = 0.22; gCtx.fillStyle = "#223A5E";
+    const fontSize = Math.floor(h*0.66);
+    gCtx.font = `700 ${fontSize}px "Noto Sans JP","Shippori Mincho",sans-serif`;
+    gCtx.textAlign = "center"; gCtx.textBaseline = "middle";
+    gCtx.fillText(item.kana, w/2, h/2 + fontSize*0.03);
+    gCtx.restore();
+  }
+  guideCanvas.style.opacity = guideOn ? "1" : "0";
+}
+function redrawInk(){
+  const rect = boardWrap.getBoundingClientRect();
+  iCtx.clearRect(0,0,rect.width,rect.height);
+  state.strokes.forEach(stroke=>{
+    if(stroke.length<2) return;
+    iCtx.beginPath(); iCtx.moveTo(stroke[0].x, stroke[0].y);
+    for(let i=1;i<stroke.length;i++) iCtx.lineTo(stroke[i].x, stroke[i].y);
+    iCtx.strokeStyle = "rgba(28,27,26,0.88)"; iCtx.lineWidth = 9; iCtx.lineCap = "round"; iCtx.lineJoin = "round";
+    iCtx.stroke();
+  });
+}
+let drawing = false, currentStroke = null;
+function getPos(e){
+  const rect = inkCanvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: clientX-rect.left, y: clientY-rect.top };
+}
+function startDraw(e){ if(state.boardLocked) return; e.preventDefault(); drawing=true; currentStroke=[getPos(e)]; state.strokes.push(currentStroke); }
+function moveDraw(e){ if(!drawing || state.boardLocked) return; e.preventDefault(); currentStroke.push(getPos(e)); redrawInk(); }
+function endDraw(){ drawing=false; currentStroke=null; }
+inkCanvas.addEventListener("mousedown", startDraw);
+inkCanvas.addEventListener("mousemove", moveDraw);
+window.addEventListener("mouseup", endDraw);
+inkCanvas.addEventListener("touchstart", startDraw, {passive:false});
+inkCanvas.addEventListener("touchmove", moveDraw, {passive:false});
+inkCanvas.addEventListener("touchend", endDraw);
+
+function lockBoard(val){
+  state.boardLocked = val;
+  lockOverlay.classList.toggle("hidden", !val);
+  inkCanvas.style.touchAction = val ? "pan-y" : "none";
+  document.getElementById("btnLockBoard").textContent = val ? "🔒 kunci papan" : "🔓 papan aktif";
+}
+lockOverlay.addEventListener("click", ()=> lockBoard(false));
+document.getElementById("btnLockBoard").addEventListener("click", ()=> lockBoard(!state.boardLocked));
+
+function undoStroke(){ state.strokes.pop(); redrawInk(); }
+function clearAll(){ state.strokes = []; redrawInk(); }
+document.getElementById("btnUndo").addEventListener("click", undoStroke);
+document.getElementById("btnClear").addEventListener("click", clearAll);
+
+function toggleGuide(){
+  guideOn = !guideOn;
+  document.getElementById("btnToggleGuide").textContent = "bayangan: "+(guideOn?"nyala":"mati");
+  document.getElementById("btnToggleGuide").classList.toggle("on", guideOn);
+  drawGuide();
+}
+function toggleGrid(){
+  gridOn = !gridOn;
+  document.getElementById("btnToggleGrid").textContent = "grid: "+(gridOn?"ada":"sembunyi");
+  document.getElementById("btnToggleGrid").classList.toggle("on", gridOn);
+  drawGuide();
+}
+document.getElementById("btnToggleGuide").addEventListener("click", toggleGuide);
+document.getElementById("btnToggleGrid").addEventListener("click", toggleGrid);
+window.addEventListener("resize", ()=>{ if(state.activeView==="board") sizeBoardCanvases(); });
+
+// ---------- KUIS ----------
+function resetQuizUI(){
+  const item = currentItem();
+  document.getElementById("quizKana").textContent = item ? item.kana : "";
+  const inputEl = document.getElementById("quizInput");
+  inputEl.value = ""; inputEl.readOnly = false; inputEl.classList.remove("correct","wrong");
+  const fb = document.getElementById("quizFeedback");
+  fb.textContent = ""; fb.classList.remove("correct","wrong");
+  document.getElementById("quizExample").textContent = "";
+  document.getElementById("btnQuizCheck").style.display = "block";
+  document.getElementById("btnQuizNext").style.display = "none";
+  document.getElementById("quizScore").textContent = `benar ${state.quizStats.correct} / ${state.quizStats.total}`;
+}
+function checkAnswer(){
+  const item = currentItem();
+  if(!item) return;
+  const inputEl = document.getElementById("quizInput");
+  const val = inputEl.value.trim().toLowerCase();
+  if(!val) return;
+  const isCorrect = val === item.romaji.toLowerCase();
+  const k = keyOf(item);
+  state.quizStats.total += 1;
+  if(isCorrect){
+    state.quizStats.correct += 1;
+    if(state.wrongCount[k]) state.wrongCount[k] = Math.max(0, state.wrongCount[k]-1);
+  } else {
+    state.wrongCount[k] = (state.wrongCount[k]||0) + 1;
+  }
+  saveState();
+  renderStatsStrip();
+
+  inputEl.classList.add(isCorrect ? "correct" : "wrong");
+  inputEl.readOnly = true;
+
+  const fb = document.getElementById("quizFeedback");
+  fb.classList.add(isCorrect ? "correct" : "wrong");
+  fb.textContent = isCorrect ? "bener! 🎉" : `salah, jawaban yang bener: "${item.romaji}"`;
+  document.getElementById("quizExample").textContent = exampleTextFor(item);
+  document.getElementById("quizScore").textContent = `benar ${state.quizStats.correct} / ${state.quizStats.total}`;
+
+  document.getElementById("btnQuizCheck").style.display = "none";
+  document.getElementById("btnQuizNext").style.display = "block";
+}
+document.getElementById("btnQuizCheck").addEventListener("click", checkAnswer);
+document.getElementById("btnQuizNext").addEventListener("click", next);
+document.getElementById("quizInput").addEventListener("keydown", (e)=>{
+  if(e.key !== "Enter") return;
+  e.preventDefault();
+  if(!document.getElementById("quizInput").readOnly) checkAnswer(); else next();
+});
+
+// ---------- TABEL EVALUASI (terpisah per skrip, ngikutin tab hiragana/katakana/campur) ----------
+function chunkArr(arr, size){
+  const out = [];
+  for(let i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size));
+  return out;
+}
+function getGroupItems(dataArr, groupName){ return dataArr.filter(x=>x[2]===groupName).map(toObj); }
+function toggleMasteredKey(key){
+  if(state.mastered.has(key)) state.mastered.delete(key); else state.mastered.add(key);
+  saveState();
+  render();
+}
+function cellInnerHTML(item, script){
+  return `<span class="kt-single" data-key="${script}:${item.kana}">${item.kana}<span class="kt-badge">✓</span></span><span class="kt-romaji">${item.romaji}</span>`;
+}
+function attachCellHandler(cell){
+  const el = cell.querySelector(".kt-single");
+  if(el) el.addEventListener("click", ()=> toggleMasteredKey(el.dataset.key));
+}
+function renderGridRow(gridEl, items, cols, totalCols, script){
+  for(let c=0;c<totalCols;c++){
+    const idx = cols.indexOf(c);
+    const cell = document.createElement("div");
+    cell.className = "kt-cell" + (idx===-1 ? " empty" : "");
+    if(idx!==-1 && items[idx]){ cell.innerHTML = cellInnerHTML(items[idx], script); attachCellHandler(cell); }
+    gridEl.appendChild(cell);
+  }
+}
+function makeGrid(colsClass){ const g = document.createElement("div"); g.className = "kt-table " + colsClass; return g; }
+
+function buildMainRowsForScript(wrap, script){
+  const dataArr = script==="hiragana" ? HIRAGANA : KATAKANA;
+  const grid = makeGrid("cols-5");
+  const rowsDef = [
+    {group:"vokal", cols:[0,1,2,3,4]},{group:"k", cols:[0,1,2,3,4]},{group:"s", cols:[0,1,2,3,4]},
+    {group:"t", cols:[0,1,2,3,4]},{group:"n", cols:[0,1,2,3,4]},{group:"h", cols:[0,1,2,3,4]},
+    {group:"m", cols:[0,1,2,3,4]},{group:"y", cols:[0,2,4]},{group:"r", cols:[0,1,2,3,4]},
+    {group:"w", cols:[0,4], take:2},
+  ];
+  rowsDef.forEach(def=>{
+    let items = getGroupItems(dataArr, def.group);
+    if(def.take) items = items.slice(0, def.take);
+    renderGridRow(grid, items, def.cols, 5, script);
+  });
+  const nItem = getGroupItems(dataArr, "w")[2];
+  renderGridRow(grid, [nItem], [0], 5, script);
+  wrap.appendChild(grid);
+}
+function buildDakuRowsForScript(wrap, script){
+  const dataArr = script==="hiragana" ? HIRAGANA : KATAKANA;
+  const grid = makeGrid("cols-5");
+  const daku = getGroupItems(dataArr, "dakuten");
+  const han = getGroupItems(dataArr, "handakuten");
+  const chunks = chunkArr(daku, 5).concat([han]);
+  chunks.forEach(chunk=> renderGridRow(grid, chunk, [0,1,2,3,4], 5, script));
+  wrap.appendChild(grid);
+}
+function buildYoonRowsForScript(wrap, script){
+  const dataArr = script==="hiragana" ? HIRAGANA : KATAKANA;
+  const grid = makeGrid("cols-3");
+  const yoon = getGroupItems(dataArr, "yōon");
+  const chunks = chunkArr(yoon, 3);
+  chunks.forEach(chunk=> renderGridRow(grid, chunk, [0,1,2], 3, script));
+  wrap.appendChild(grid);
+}
+function addScriptLabel(wrap, script){
+  const label = document.createElement("div");
+  label.className = "kt-script-label";
+  label.textContent = script;
+  wrap.appendChild(label);
+}
+function buildAllTables(){
+  const scripts = state.script === "both" ? ["hiragana","katakana"] : [state.script];
+  const mainWrap = document.getElementById("tblMain"); mainWrap.innerHTML = "";
+  const dakuWrap = document.getElementById("tblDaku"); dakuWrap.innerHTML = "";
+  const yoonWrap = document.getElementById("tblYoon"); yoonWrap.innerHTML = "";
+  scripts.forEach(scr=>{
+    if(scripts.length > 1) addScriptLabel(mainWrap, scr);
+    buildMainRowsForScript(mainWrap, scr);
+    if(scripts.length > 1) addScriptLabel(dakuWrap, scr);
+    buildDakuRowsForScript(dakuWrap, scr);
+    if(scripts.length > 1) addScriptLabel(yoonWrap, scr);
+    buildYoonRowsForScript(yoonWrap, scr);
+  });
+  updateTableMarks();
+}
+function updateTableMarks(){
+  document.querySelectorAll(".kt-single").forEach(el=>{
+    el.parentElement.classList.toggle("mastered", state.mastered.has(el.dataset.key));
+  });
+  const scripts = state.script === "both" ? ["hiragana","katakana"] : [state.script];
+  const total = scripts.reduce((sum,scr)=> sum + (scr==="hiragana" ? HIRAGANA.length : KATAKANA.length), 0);
+  let count = 0;
+  scripts.forEach(scr=>{
+    const dataArr = scr==="hiragana" ? HIRAGANA : KATAKANA;
+    dataArr.forEach(x=>{ if(state.mastered.has(scr+":"+x[0])) count++; });
+  });
+  const label = document.getElementById("tableProgress");
+  if(label) label.textContent = `${count} / ${total} dikuasai (${scripts.join(" + ")})`;
+}
+
+// ---------- INIT ----------
+loadState();
+updateStreak();
+document.getElementById("btnAdaptive").textContent = "🎯 mode adaptif: "+(state.adaptiveMode?"nyala":"mati");
+document.getElementById("btnAdaptive").classList.toggle("on", state.adaptiveMode);
+renderRowChips();
+rebuildDeck();
+buildAllTables();
+requestAnimationFrame(sizeBoardCanvases);
+lockBoard(true);
+renderStatsStrip();
+</script>
+</body>
+</html>
